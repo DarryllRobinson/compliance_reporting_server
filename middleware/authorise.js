@@ -1,9 +1,13 @@
-const { expressjwt: expressJwt } = require("express-jwt");
-const { secret } = require("../config.json");
-const db = require("../helpers/db");
+const { expressjwt: jwt } = require("express-jwt");
+
+const secret = process.env.JWT_SECRET;
+const db = require("../db");
 const logger = require("winston");
 
 module.exports = authorize;
+if (!secret) {
+  throw new Error("JWT_SECRET is not defined in environment variables");
+}
 
 function authorize(roles = []) {
   // roles param can be a single role string (e.g. Role.User or 'User')
@@ -11,10 +15,11 @@ function authorize(roles = []) {
   if (typeof roles === "string") {
     roles = [roles];
   }
+  console.log("secret", secret);
 
   return [
     // authenticate JWT token and attach user to request object (req.user)
-    expressJwt({ secret, algorithms: ["HS256"] }),
+    jwt({ secret, algorithms: ["HS256"] }),
 
     // authorize based on user role
     async (req, res, next) => {

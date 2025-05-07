@@ -1,53 +1,79 @@
-﻿require("dotenv").config();
+require("dotenv").config();
+// --- TENANT MULTITENANCY foundation ---
+const mysql = require("mysql2/promise"); // For dynamic per-tenant schema connections
+const jwt = require("jsonwebtoken"); // For extracting user & tenant info from JWT
 const express = require("express");
-const helmet = require("helmet");
-const compression = require("compression");
 const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const cors = require("cors");
 const errorHandler = require("./middleware/error-handler");
-const setTenant = require("./middleware/setTenant");
+const authenticate = require("./middleware/authenticate");
+
+// --- Tenant connection pool cache, keyed by schema name ---
+const tenantPools = {}; // keyed by schema name
+async function getTenantConnection(schema) {
+  if (!tenantPools[schema]) {
+    tenantPools[schema] = mysql.createPool({
+      host: process.env.DB_HOST,
+      user: process.env.TENANT_DB_USER,
+      password: process.env.TENANT_DB_PASSWORD,
+      database: schema,
+      waitForConnections: true,
+      connectionLimit: 5,
+      queueLimit: 0,
+    });
+  }
+  return tenantPools[schema];
+}
+
 const app = express();
+const port = process.env.PORT || 4000;
 
 // Middleware
-app.use(helmet());
-app.use(compression());
-app.use(express.json());
 app.use(morgan("dev"));
-app.use(setTenant);
+app.use(helmet());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // 👈 Must be exact
+    credentials: true, // 👈 Allow cookies
+  })
+);
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
+// --- Tenant extraction middleware: attaches req.user and req.db for per-tenant access ---
+app.use(async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return next();
+
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+
+    // If JWT contains tenant schema info, attach a db connection for downstream use
+    if (decoded.schema) {
+      req.db = await getTenantConnection(decoded.schema);
+    }
+  } catch (err) {
+    console.error("Token parse error:", err.message);
+  }
+  next();
 });
-app.use(limiter);
 
-// Example protected route placeholder
-console.log("Loading reports controller");
-app.use("/api/reports", require("./reports/reports.controller"));
-console.log("Loading tcp controller");
-app.use("/api/tcp", require("./tcp/tcp.controller"));
-console.log("Loading tat controller");
-app.use("/api/tat", require("./tat/tat.controller"));
-console.log("Loading users controller");
-app.use("/api/users", require("./users/users.controller"));
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
-// Healthcheck
-app.get("/api/health", (_, res) => res.send("OK"));
-
-// Catch-all 404
-app.use((req, res) => res.status(404).json({ message: "Not found" }));
+// Example secured route
+app.use("/api/reports", authenticate, require("./routes/report.routes"));
+app.use("/api/users", require("./routes/user.routes"));
 
 // Error handling
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
-
-process.on("unhandledRejection", (err) => {
-  console.error("Unhandled rejection:", err);
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
 });
