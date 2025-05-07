@@ -4,6 +4,7 @@ module.exports = {
   getAll,
   getAllByReportId,
   getTatByReportId,
+  getAllByClientId,
   sbiUpdate,
   getById,
   create,
@@ -51,9 +52,14 @@ async function getById(id) {
   return await getTat(id);
 }
 
-async function create(params) {
-  // save tat
-  await db.Tat.create(params);
+async function create(params, user) {
+  return await db.Tat.create({ ...params, clientId: user.clientId });
+}
+
+async function getAllByClientId(clientId) {
+  return await db.TatView.findAll({
+    where: { clientId },
+  });
 }
 
 async function update(id, params) {

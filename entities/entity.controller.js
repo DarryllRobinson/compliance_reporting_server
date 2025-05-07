@@ -4,7 +4,6 @@ const Joi = require("joi");
 const validateRequest = require("../middleware/validate-request");
 const authorise = require("../middleware/authorise");
 const tatService = require("./entity.service");
-const { add } = require("winston");
 
 // routes
 router.get("/", authorise(), getAll);

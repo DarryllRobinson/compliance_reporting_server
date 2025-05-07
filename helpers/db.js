@@ -54,8 +54,11 @@ async function initialize() {
   db.RefreshToken = require("../users/refresh-token.model")(sequelize);
   db.Client = require("../clients/client.model")(sequelize);
   db.Report = require("../reports/report.model")(sequelize);
+  db.ReportView = require("../reports/reportView.model")(sequelize);
   db.Tcp = require("../tcp/tcp.model")(sequelize);
+  db.TcpView = require("../tcp/tcpView.model")(sequelize);
   db.Tat = require("../tat/tat.model")(sequelize);
+  db.TatView = require("../tat/tatView.model")(sequelize);
 
   // define relationships
   db.User.hasMany(db.RefreshToken, { onDelete: "CASCADE" });

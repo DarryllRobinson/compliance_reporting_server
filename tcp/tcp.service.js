@@ -4,6 +4,7 @@ module.exports = {
   getAll,
   getAllByReportId,
   getTcpByReportId,
+  getAllByClientId,
   sbiUpdate,
   getById,
   create,
@@ -51,9 +52,14 @@ async function getById(id) {
   return await getTcp(id);
 }
 
-async function create(params) {
-  // save tcp
-  await db.Tcp.create(params);
+async function create(params, user) {
+  return await db.Tcp.create({ ...params, clientId: user.clientId });
+}
+
+async function getAllByClientId(clientId) {
+  return await db.TcpView.findAll({
+    where: { clientId },
+  });
 }
 
 async function update(id, params) {

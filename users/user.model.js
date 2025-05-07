@@ -29,7 +29,7 @@ function model(sequelize) {
         return !!(this.verified || this.passwordReset);
       },
     },
-    // clientId: { type: DataTypes.INTEGER },
+    clientId: { type: DataTypes.INTEGER, allowNull: false },
   };
 
   const options = {

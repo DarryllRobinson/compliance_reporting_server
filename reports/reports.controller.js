@@ -3,7 +3,6 @@ const router = express.Router();
 const Joi = require("joi");
 const validateRequest = require("../middleware/validate-request");
 const authorise = require("../middleware/authorise");
-const Role = require("../helpers/role");
 const reportService = require("./report.service");
 
 // routes
@@ -16,27 +15,18 @@ router.delete("/:id", authorise(), _delete);
 
 module.exports = router;
 
-function getAll(req, res, next) {
+function create(req, res, next) {
   reportService
-    .getAll()
-    .then((reports) => res.json(reports))
+    .create(req.body, req.user)
+    .then((report) => res.json(report))
     .catch(next);
 }
 
-function getAllByClientId(req, res, next) {
+function getAll(req, res, next) {
   reportService
-    .getAllByClientId(req.params.clientId)
-    .then((reports) => {
-      if (!reports || reports.length === 0) {
-        console.log("No reports found for clientId:", req.params.clientId);
-        return res.status(404).json({ message: "No reports found" });
-      }
-      res.json(reports);
-    })
-    .catch((error) => {
-      console.error("Error fetching report:", error); // Log the error details
-      next(error); // Pass the error to the global error handler
-    });
+    .getAllByClientId(req.user.clientId)
+    .then((reports) => res.json(reports))
+    .catch(next);
 }
 
 function getById(req, res, next) {
@@ -57,16 +47,6 @@ function createSchema(req, res, next) {
     clientId: Joi.number().required(),
   });
   validateRequest(req, next, schema);
-}
-
-function create(req, res, next) {
-  reportService
-    .create(req.body)
-    .then((report) => res.json(report))
-    .catch((error) => {
-      console.error("Error creating report:", error); // Log the error details
-      next(error); // Pass the error to the global error handler
-    });
 }
 
 function updateSchema(req, res, next) {

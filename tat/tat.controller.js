@@ -4,7 +4,6 @@ const Joi = require("joi");
 const validateRequest = require("../middleware/validate-request");
 const authorise = require("../middleware/authorise");
 const tatService = require("./tat.service");
-const { add } = require("winston");
 
 // routes
 router.get("/", authorise(), getAll);
@@ -70,12 +69,16 @@ function createSchema(req, res, next) {
 
 function create(req, res, next) {
   tatService
-    .create(req.body)
-    .then((tat) => res.json(tat))
-    .catch((error) => {
-      console.error("Error creating tat:", error); // Log the error details
-      next(error); // Pass the error to the global error handler
-    });
+    .create(req.body, req.user)
+    .then((record) => res.json(record))
+    .catch(next);
+}
+
+function getAll(req, res, next) {
+  tatService
+    .getAllByClientId(req.user.clientId)
+    .then((records) => res.json(records))
+    .catch(next);
 }
 
 function update(req, res, next) {

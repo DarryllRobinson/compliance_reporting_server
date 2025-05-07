@@ -1,11 +1,5 @@
-const config = require("./../config.json");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
 const { Op } = require("sequelize");
-const sendEmail = require("../helpers/send-email");
 const db = require("../helpers/db");
-const Role = require("../helpers/role");
 
 module.exports = {
   getAll,
@@ -20,24 +14,14 @@ async function getAll() {
   return await db.Report.findAll();
 }
 
-async function getAllByClientId(clientId) {
-  // Get all reports for the client
-  const reports = await db.Report.findAll({
-    where: {
-      clientId: clientId,
-    },
-  });
-
-  return reports;
+async function create(params, user) {
+  return await db.Report.create({ ...params, clientId: user.clientId });
 }
 
-async function create(params) {
-  const report = await db.Report.create(params);
-  if (!report) {
-    throw { status: 500, message: "Report creation failed" };
-  }
-  // return saved report
-  return report;
+async function getAllByClientId(clientId) {
+  return await db.ReportView.findAll({
+    where: { clientId },
+  });
 }
 
 async function update(id, params) {

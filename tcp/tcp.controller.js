@@ -1,10 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Joi = require("joi");
-const validateRequest = require("../middleware/validate-request");
 const authorise = require("../middleware/authorise");
 const tcpService = require("./tcp.service");
-const { add } = require("winston");
 
 // routes
 router.get("/", authorise(), getAll);
@@ -243,12 +241,16 @@ async function validateRecord(req) {
 
 function create(req, res, next) {
   tcpService
-    .create(req.body)
-    .then((tcp) => res.json(tcp))
-    .catch((error) => {
-      console.error("Error creating tcp:", error); // Log the error details
-      next(error); // Pass the error to the global error handler
-    });
+    .create(req.body, req.user)
+    .then((record) => res.json(record))
+    .catch(next);
+}
+
+function getAll(req, res, next) {
+  tcpService
+    .getAllByClientId(req.user.clientId)
+    .then((records) => res.json(records))
+    .catch(next);
 }
 
 function bulkUpdate(req, res, next) {
