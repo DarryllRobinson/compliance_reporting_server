@@ -1,3 +1,4 @@
+const { cli } = require("winston/lib/winston/config");
 const db = require("../helpers/db");
 
 module.exports = {
@@ -12,28 +13,41 @@ module.exports = {
   delete: _delete,
 };
 
-async function getAll() {
-  return await db.Tat.findAll();
+async function getAll(clientId) {
+  return await db.Tat.findAll({
+    where: {
+      clientId,
+    },
+  });
 }
 
-async function getAllByReportId(reportId) {
+async function getAllByReportId(clientId, reportId) {
   const tat = await db.Tat.findAll({
-    where: { reportId },
+    where: { reportId, clientId },
   });
   return tat;
 }
 
-async function getTatByReportId(reportId) {
+async function getTatByReportId(clientId, reportId) {
   const tat = await db.Tat.findAll({
-    where: { reportId, isTat: true, excludedTat: false },
+    where: {
+      reportId,
+      isTat: true,
+      excludedTat: false,
+      clientId,
+    },
   });
   return tat;
 }
 
-async function sbiUpdate(reportId, params) {
+async function sbiUpdate(clientId, reportId, params) {
   // Finds the TCP record by payeeEntityAbn and updates isSbi to false
   const tat = await db.Tat.findAll({
-    where: { reportId, payeeEntityAbn: params.payeeEntityAbn },
+    where: {
+      reportId,
+      payeeEntityAbn: params.payeeEntityAbn,
+      clientId,
+    },
   });
   if (tat.length > 0) {
     await db.Tat.update(
@@ -42,18 +56,21 @@ async function sbiUpdate(reportId, params) {
         where: {
           reportId,
           payeeEntityAbn: params.payeeEntityAbn,
+          clientId,
         },
       }
     );
   }
 }
 
-async function getById(id) {
-  return await getTat(id);
+async function getById(clientId, id) {
+  return await getTat(id, {
+    where: { clientId },
+  });
 }
 
-async function create(params, user) {
-  return await db.Tat.create({ ...params, clientId: user.clientId });
+async function create(clientId, params) {
+  return await db.Tat.create({ ...params, clientId });
 }
 
 async function getAllByClientId(clientId) {
@@ -62,9 +79,11 @@ async function getAllByClientId(clientId) {
   });
 }
 
-async function update(id, params) {
+async function update(clientId, id, params) {
   // console.log("tatService update", id, params);
-  const tat = await getTat(id);
+  const tat = await getTat(id, {
+    where: { clientId },
+  });
 
   // validate
   // if (
@@ -79,14 +98,18 @@ async function update(id, params) {
   await tat.save();
 }
 
-async function _delete(id) {
-  const tat = await getTat(id);
+async function _delete(clientId, id) {
+  const tat = await getTat(id, {
+    where: { clientId },
+  });
   await tat.destroy();
 }
 
 // helper functions
-async function getTat(id) {
-  const tat = await db.Tat.findByPk(id);
+async function getTat(clientId, id) {
+  const tat = await db.Tat.findByPk(id, {
+    where: { clientId },
+  });
   if (!tat) throw { status: 404, message: "Tat not found" };
   return tat;
 }

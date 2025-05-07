@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const db = require("../helpers/db");
 
 module.exports = {
@@ -10,12 +10,12 @@ module.exports = {
   delete: _delete,
 };
 
-async function getAll() {
-  return await db.Report.findAll();
+async function getAll(clientId) {
+  return await db.Report.findAll({ where: { clientId } });
 }
 
-async function create(params, user) {
-  return await db.Report.create({ ...params, clientId: user.clientId });
+async function create(clientId, params) {
+  return await db.Report.create({ ...params, clientId });
 }
 
 async function getAllByClientId(clientId) {
@@ -24,8 +24,8 @@ async function getAllByClientId(clientId) {
   });
 }
 
-async function update(id, params) {
-  const report = await getReport(id);
+async function update(clientId, id, params) {
+  const report = await getReport(id, { where: { clientId } });
 
   // copy params to report and save
   Object.assign(report, params);
@@ -34,47 +34,16 @@ async function update(id, params) {
   return report;
 }
 
-async function _delete(id) {
-  const report = await getReport(id);
+async function _delete(clientId, id) {
+  const report = await getReport(id, { where: { clientId } });
   await report.destroy();
 }
 
 // helper functions
-async function getById(id) {
-  const report = await db.Report.findByPk(id);
+async function getById(clientId, id) {
+  const report = await db.Report.findByPk(id, {
+    where: { clientId },
+  });
   if (!report) throw { status: 404, message: "Report not found" };
   return report;
-}
-
-async function getEntitiesByABN(abn) {
-  const entities = await db.Report.findAll({
-    where: {
-      ABN: {
-        [Op.like]: `%${abn}%`,
-      },
-    },
-  });
-  return entities;
-}
-
-async function getEntitiesByACN(acn) {
-  const entities = await db.Report.findAll({
-    where: {
-      ACN: {
-        [Op.like]: `%${acn}%`,
-      },
-    },
-  });
-  return entities;
-}
-
-async function getEntitiesByBusinessName(businessName) {
-  const entities = await db.Report.findAll({
-    where: {
-      BusinessName: {
-        [Op.like]: `%${businessName}%`,
-      },
-    },
-  });
-  return entities;
 }

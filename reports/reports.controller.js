@@ -16,23 +16,34 @@ router.delete("/:id", authorise(), _delete);
 module.exports = router;
 
 function create(req, res, next) {
+  const clientId = req.user.clientId;
   reportService
-    .create(req.body, req.user)
+    .create(clientId, req.body, req.user)
     .then((report) => res.json(report))
     .catch(next);
 }
 
 function getAll(req, res, next) {
+  const clientId = req.user.clientId;
   reportService
-    .getAllByClientId(req.user.clientId)
+    .getAllByClientId(clientId)
     .then((reports) => res.json(reports))
     .catch(next);
 }
 
 function getById(req, res, next) {
+  const clientId = req.user.clientId;
   reportService
-    .getById(req.params.id)
+    .getById(clientId, req.params.id)
     .then((report) => (report ? res.json(report) : res.sendStatus(404)))
+    .catch(next);
+}
+
+function getAllByClientId(req, res, next) {
+  const clientId = req.user.clientId;
+  reportService
+    .getAllByClientId(clientId)
+    .then((reports) => (reports ? res.json(reports) : res.sendStatus(404)))
     .catch(next);
 }
 
@@ -67,15 +78,17 @@ function updateSchema(req, res, next) {
 }
 
 function update(req, res, next) {
+  const clientId = req.user.clientId;
   reportService
-    .update(req.params.id, req.body)
+    .update(clientId, req.params.id, req.body)
     .then((report) => res.json(report))
     .catch(next);
 }
 
 function _delete(req, res, next) {
+  const clientId = req.user.clientId;
   reportService
-    .delete(req.params.id)
+    .delete(clientId, req.params.id)
     .then(() => res.json({ message: "Report deleted successfully" }))
     .catch((error) => {
       console.error("Error deleting report:", error); // Log the error details

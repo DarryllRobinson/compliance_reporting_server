@@ -3,6 +3,7 @@ const router = express.Router();
 const Joi = require("joi");
 const authorise = require("../middleware/authorise");
 const tcpService = require("./tcp.service");
+const { cli } = require("winston/lib/winston/config");
 
 // routes
 router.get("/", authorise(), getAll);
@@ -18,27 +19,31 @@ router.delete("/:id", authorise(), _delete);
 module.exports = router;
 
 function getAll(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .getAll()
+    .getAll(clientId)
     .then((entities) => res.json(entities))
     .catch(next);
 }
 
 function getAllByReportId(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .getAllByReportId(req.params.id)
+    .getAllByReportId(clientId, req.params.id)
     .then((tcp) => (tcp ? res.json(tcp) : res.sendStatus(404)))
     .catch(next);
 }
 
 function getTcpByReportId(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .getTcpByReportId(req.params.id)
+    .getTcpByReportId(clientId, req.params.id)
     .then((tcp) => (tcp ? res.json(tcp) : res.sendStatus(404)))
     .catch(next);
 }
 
 function sbiUpdate(req, res, next) {
+  const clientId = req.user.clientId;
   try {
     // Ensure req.body is an object and iterate through its keys
     const records = Object.values(req.body);
@@ -54,7 +59,7 @@ function sbiUpdate(req, res, next) {
           await validateSbiRecord(reqForValidation);
 
           // Save each record using tcpService
-          return await tcpService.sbiUpdate(req.params.id, record);
+          return await tcpService.sbiUpdate(clientId, req.params.id, record);
         } catch (error) {
           console.error("Error processing record:", error);
           throw error; // Propagate the error to Promise.all
@@ -90,6 +95,7 @@ async function validateSbiRecord(req) {
 }
 
 function partialUpdate(req, res, next) {
+  const clientId = req.user.clientId;
   try {
     // Ensure req.body is an object and iterate through its keys
     const records = Object.values(req.body);
@@ -109,7 +115,7 @@ function partialUpdate(req, res, next) {
           await partialUpdateSchema(reqForValidation); // Validate the record
 
           // Save each record using tcpService
-          return await tcpService.update(record.id, recordToUpdate);
+          return await tcpService.update(clientId, record.id, recordToUpdate);
         } catch (error) {
           console.error("Error processing record:", error);
           throw error; // Propagate the error to Promise.all
@@ -147,13 +153,15 @@ async function partialUpdateSchema(req) {
 }
 
 function getById(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .getById(req.params.id)
+    .getById(clientId, req.params.id)
     .then((tcp) => (tcp ? res.json(tcp) : res.sendStatus(404)))
     .catch(next);
 }
 
 function bulkCreate(req, res, next) {
+  const clientId = req.user.clientId;
   try {
     // Ensure req.body is an object and iterate through its keys
     const records = Object.values(req.body);
@@ -169,7 +177,7 @@ function bulkCreate(req, res, next) {
           await validateRecord(reqForValidation);
 
           // Save each record using tcpService
-          return await tcpService.create(record);
+          return await tcpService.create(clientId, record);
         } catch (error) {
           console.error("Error processing record:", error);
           throw error; // Propagate the error to Promise.all
@@ -240,20 +248,23 @@ async function validateRecord(req) {
 }
 
 function create(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .create(req.body, req.user)
+    .create(clientId, req.body, req.user)
     .then((record) => res.json(record))
     .catch(next);
 }
 
 function getAll(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .getAllByClientId(req.user.clientId)
+    .getAllByClientId(clientId)
     .then((records) => res.json(records))
     .catch(next);
 }
 
 function bulkUpdate(req, res, next) {
+  const clientId = req.user.clientId;
   try {
     // Ensure req.body is an object and iterate through its keys
     const records = Object.values(req.body);
@@ -273,7 +284,7 @@ function bulkUpdate(req, res, next) {
           await bulkUpdateSchema(reqForValidation); // Validate the record
 
           // Save each record using tcpService
-          return await tcpService.update(id, recordToUpdate);
+          return await tcpService.update(clientId, id, recordToUpdate);
         } catch (error) {
           console.error("Error processing record:", error);
           throw error; // Propagate the error to Promise.all
@@ -345,15 +356,17 @@ async function bulkUpdateSchema(req) {
 }
 
 function update(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .update(req.params.id, req.body)
+    .update(clientId, req.params.id, req.body)
     .then((tcp) => res.json(tcp))
     .catch(next);
 }
 
 function _delete(req, res, next) {
+  const clientId = req.user.clientId;
   tcpService
-    .delete(req.params.id)
+    .delete(clientId, req.params.id)
     .then(() => res.json({ message: "Tcp deleted successfully" }))
     .catch((error) => {
       console.error("Error deleting tcp:", error); // Log the error details

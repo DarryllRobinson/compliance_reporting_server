@@ -17,29 +17,33 @@ router.delete("/:id", authorise(), _delete);
 module.exports = router;
 
 function getAll(req, res, next) {
+  const clientId = req.user.clientId;
   tatService
-    .getAll()
+    .getAll(clientId)
     .then((entities) => res.json(entities))
     .catch(next);
 }
 
 function getAllByReportId(req, res, next) {
+  const clientId = req.user.clientId;
   tatService
-    .getAllByReportId(req.params.id)
+    .getAllByReportId(clientId, req.params.id)
     .then((tat) => (tat ? res.json(tat) : res.sendStatus(404)))
     .catch(next);
 }
 
 function getTatByReportId(req, res, next) {
+  const clientId = req.user.clientId;
   tatService
-    .getTatByReportId(req.params.id)
+    .getTatByReportId(clientId, req.params.id)
     .then((tat) => (tat ? res.json(tat) : res.sendStatus(404)))
     .catch(next);
 }
 
 function getById(req, res, next) {
+  const clientId = req.user.clientId;
   tatService
-    .getById(req.params.id)
+    .getById(clientId, req.params.id)
     .then((tat) => (tat ? res.json(tat) : res.sendStatus(404)))
     .catch(next);
 }
@@ -69,21 +73,23 @@ function createSchema(req, res, next) {
 
 function create(req, res, next) {
   tatService
-    .create(req.body, req.user)
+    .create(clientId, req.body, req.user)
     .then((record) => res.json(record))
     .catch(next);
 }
 
 function getAll(req, res, next) {
+  const clientId = req.user.clientId;
   tatService
-    .getAllByClientId(req.user.clientId)
+    .getAllByClientId(clientId)
     .then((records) => res.json(records))
     .catch(next);
 }
 
 function update(req, res, next) {
+  const clientId = req.user.clientId;
   tatService
-    .update(req.params.id, req.body)
+    .update(clientId, req.params.id, req.body)
     .then((tat) => res.json(tat))
     .catch(next);
 }
@@ -112,8 +118,9 @@ function updateSchema(req, res, next) {
 }
 
 function _delete(req, res, next) {
+  const clientId = req.user.clientId;
   tatService
-    .delete(req.params.id)
+    .delete(clientId, req.params.id)
     .then(() => res.json({ message: "Tat deleted successfully" }))
     .catch((error) => {
       console.error("Error deleting tat:", error); // Log the error details

@@ -5,6 +5,7 @@ const compression = require("compression");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const errorHandler = require("./middleware/error-handler");
+const setTenant = require("./middleware/setTenant");
 const app = express();
 
 // Middleware
@@ -12,6 +13,7 @@ app.use(helmet());
 app.use(compression());
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(setTenant);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
