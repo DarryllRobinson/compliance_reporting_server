@@ -1,74 +1,47 @@
-﻿require("rootpath")();
+﻿require("dotenv").config();
 const express = require("express");
-const app = express();
-const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
 const errorHandler = require("./middleware/error-handler");
-// const helmet = require('helmet');
+const app = express();
 
-// app.get("*", (req, res) => {
-//   res.sendFile(path.join(__dirname, "build", "index.html"));
-// });
+// Middleware
+app.use(helmet());
+app.use(compression());
+app.use(express.json());
+app.use(morgan("dev"));
 
-app.use(
-  cors({
-    origin: "http://localhost:3000", // Allow requests from the frontend
-    credentials: true, // Allow cookies and credentials
-  })
-);
-
-// allow cors requests from any origin and with credentials
-// app.use(
-//   cors({
-//     origin: (origin, callback) => callback(null, true),
-//     credentials: true,
-//   })
-// );
-
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(cookieParser());
-
-// Helmet stuff to go here but I don't know enough about it yet
-// helmetjs.github.io/?ref=hackernoon.com
-// app.use(helmet());
-
-// Add the /api prefix to all routes
-app.use("/api/users", require("./users/users.controller"));
-app.use("/api/clients", require("./clients/clients.controller"));
-app.use("/api/reports", require("./reports/reports.controller"));
-app.use("/api/tcp", require("./tcp/tcp.controller"));
-app.use("/api/tat", require("./tat/tat.controller"));
-
-// Middleware to log all registered routes
-app._router.stack.forEach((middleware) => {
-  if (middleware.route) {
-    console.log(
-      `Route: ${middleware.route.path}, Methods: ${Object.keys(middleware.route.methods).join(", ")}`
-    );
-  } else if (middleware.name === "router") {
-    middleware.handle.stack.forEach((handler) => {
-      if (handler.route) {
-        console.log(
-          `Route: ${handler.route.path}, Methods: ${Object.keys(handler.route.methods).join(", ")}`
-        );
-      }
-    });
-  }
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+app.use(limiter);
 
-// swagger docs route
-// app.use("/api-docs", require("helpers/swagger"));
+// Example protected route placeholder
+console.log("Loading reports controller");
+app.use("/api/reports", require("./reports/reports.controller"));
+console.log("Loading tcp controller");
+app.use("/api/tcp", require("./tcp/tcp.controller"));
+console.log("Loading tat controller");
+app.use("/api/tat", require("./tat/tat.controller"));
+console.log("Loading users controller");
+app.use("/api/users", require("./users/users.controller"));
 
-// global error handler
+// Healthcheck
+app.get("/api/health", (_, res) => res.send("OK"));
+
+// Catch-all 404
+app.use((req, res) => res.status(404).json({ message: "Not found" }));
+
+// Error handling
 app.use(errorHandler);
 
-// start server
-const port =
-  process.env.NODE_ENV === "production" ? process.env.PORT || 80 : 4000;
-app.listen(port, () => console.log("Server listening on port " + port));
-
-// run this when you need to find the pid to kill
-// sudo lsof -i -P | grep LISTEN | grep :$PORT
-// mysql.server restart
+// Start server
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});

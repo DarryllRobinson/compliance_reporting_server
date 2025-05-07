@@ -28,7 +28,9 @@ async function initialize() {
         password: DB_PASSWORD,
         socketPath: DB_SOCKET_PATH,
       });
-      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;`);
+      if (process.env.NODE_ENV !== "production") {
+        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;`);
+      }
       break;
     } catch (err) {
       retries -= 1;
@@ -74,6 +76,7 @@ async function initialize() {
 async function initSequelize(database, user, password, host, socketPath) {
   const sequelize = new Sequelize(database, user, password, {
     dialect: "mysql",
+    logging: false,
     dialectOptions: { decimalNumbers: true, socketPath },
     host,
     pool: {

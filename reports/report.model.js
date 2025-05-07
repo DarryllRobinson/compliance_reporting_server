@@ -4,29 +4,25 @@ module.exports = model;
 
 function model(sequelize) {
   const attributes = {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    reportName: { type: DataTypes.STRING, allowNull: false },
     ReportingPeriodStartDate: { type: DataTypes.DATE, allowNull: false },
     ReportingPeriodEndDate: { type: DataTypes.DATE, allowNull: false },
-    code: { type: DataTypes.STRING, allowNull: false },
-    reportName: { type: DataTypes.STRING, allowNull: false },
-    createdBy: { type: DataTypes.INTEGER, allowNull: false },
-    updatedBy: { type: DataTypes.INTEGER, allowNull: true },
-    submittedDate: { type: DataTypes.DATE, allowNull: true },
-    submittedBy: { type: DataTypes.INTEGER, allowNull: true },
-    reportStatus: {
-      type: DataTypes.ENUM(
-        "Created",
-        "Cancelled",
-        "Updated",
-        "Received",
-        "Accepted",
-        "Rejected",
-        "Submitted"
-      ),
-      allowNull: false,
-      defaultValue: "Created",
-    },
-    clientId: { type: DataTypes.INTEGER, allowNull: false },
+    ApprovalDate: { type: DataTypes.DATE },
+    submittedDate: { type: DataTypes.DATE },
+    submittedBy: { type: DataTypes.INTEGER },
+    reportStatus: { type: DataTypes.STRING },
+    createdBy: { type: DataTypes.INTEGER },
+    updatedBy: { type: DataTypes.INTEGER },
+    clientId: { type: DataTypes.INTEGER },
   };
 
-  return sequelize.define("report", attributes, { tableName: "tbl_reports" });
+  const options = {
+    tableName: "tbl_reports",
+    timestamps: true,
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+  };
+
+  return sequelize.define("Report", attributes, options);
 }
